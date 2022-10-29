@@ -42,6 +42,7 @@ function Download(props) {
         downloadStateOptions.ready
     );
     const [progPercent] = useState(0);
+    const [url, setUrl] = useState("");
 
     const clickDownloadHandler = () => {
         if (downloadState.name === downloadStateOptions.ready.name) {
@@ -64,6 +65,10 @@ function Download(props) {
                     label="URL"
                     variant="outlined"
                     sx={{ width: "40%" }}
+                    value={url}
+                    onChange={(e) => {
+                        setUrl(e.target.value);
+                    }}
                 />
                 <Button
                     sx={{ alignSelf: "center" }}
@@ -92,7 +97,11 @@ function Download(props) {
                         alignItems: "center",
                     }}
                 >
-                    <IconButton>
+                    <IconButton
+                        onClick={() => {
+                            props.onDelete(props.id);
+                        }}
+                    >
                         <Icon>cancel</Icon>
                     </IconButton>
                 </Box>

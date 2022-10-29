@@ -20,10 +20,28 @@ function HomePage() {
         }
         setDownloads([...downloads, new DownloadEl(newId)]);
     };
+
+    const onDelete = (id) => {
+        let resultingArr = [];
+        downloads.map((download) => {
+            if (download.id !== id) {
+                resultingArr.push(download);
+            }
+            return resultingArr;
+        });
+        setDownloads(resultingArr);
+    };
+
     return (
         <DlPanel>
             {downloads.map((download) => {
-                return <Download key={download.id} id={download.id} />;
+                return (
+                    <Download
+                        key={download.id}
+                        id={download.id}
+                        onDelete={onDelete}
+                    />
+                );
             })}
             <Button
                 sx={{ alignSelf: "center" }}
