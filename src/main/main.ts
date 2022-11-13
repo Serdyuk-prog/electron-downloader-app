@@ -108,16 +108,27 @@ const createWindow = async () => {
 /**
  * Download listener.
  */
+
 ipcMain.on('download', async (event, downloadUrl) => {
   console.log(`Received args in ipcMain: ${downloadUrl[0]}`);
-
+  let localItem: any;
+  let prevBytes = 0;
   if (downloadUrl[0]) {
     try {
       await download(BrowserWindow.getFocusedWindow(), downloadUrl[0], {
         onProgress: (progress: Progress) => {
-          console.log(`Sending to download-progress`);
           console.log(progress);
-          mainWindow!.webContents.send('download-progress', progress);
+          if (localItem.getState() === 'interrupted' && localItem.canResume()) {
+            console.log(`Sending to download-interrupted`);
+            mainWindow!.webContents.send('download-interrupted', progress);
+            setTimeout(() => {
+              localItem.resume();
+            }, 5000);
+          } else if (progress.transferredBytes !== prevBytes) {
+            console.log(`Sending to download-progress`);
+            mainWindow!.webContents.send('download-progress', progress);
+          }
+          prevBytes = progress.transferredBytes;
         },
         onCompleted: (item: File) => {
           console.log(`Sending to download-complete`);
@@ -127,6 +138,7 @@ ipcMain.on('download', async (event, downloadUrl) => {
         onStarted: (item: File) => {
           console.log(`Sending to download-started`);
           console.log(item);
+          localItem = item;
           mainWindow!.webContents.send('download-started', item);
         },
         showProgressBar: true,

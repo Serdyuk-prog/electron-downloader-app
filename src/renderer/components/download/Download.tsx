@@ -89,6 +89,10 @@ function Download({ id, onDelete }: DownloadProps) {
       console.log(`Received from download-started: ${args}`);
       setDownloadState(downloadStateOptions.inProgress);
     });
+
+    window.electron.ipcRenderer.once('download-interrupted', (args) => {
+      console.log(`Received from download-interrupted: ${args}`);
+    });
   });
 
   return (
