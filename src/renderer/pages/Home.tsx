@@ -1,4 +1,3 @@
-/* eslint-disable react/no-this-in-sfc,@typescript-eslint/ban-ts-comment */
 import { Button } from '@mui/material';
 import Icon from '@mui/material/Icon';
 import { useState } from 'react';

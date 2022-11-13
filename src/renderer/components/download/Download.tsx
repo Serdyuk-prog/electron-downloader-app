@@ -1,42 +1,14 @@
-/* eslint-disable react/no-this-in-sfc */
-// eslint-disable-next-line max-classes-per-file
 import { TextField, Button, Box, Divider } from '@mui/material';
 import Icon from '@mui/material/Icon';
 import IconButton from '@mui/material/IconButton';
 import { useEffect, useState } from 'react';
 import { Progress } from 'electron-dl';
-
-type DownloadProps = {
-  id: number;
-  onDelete: (id: number) => void;
-};
+import BtnState from 'renderer/ts/classes/btn.state';
+import DownloadState from 'renderer/ts/classes/download.state';
+import { DownloadProps } from 'renderer/ts/types/download.props';
+import { toast } from 'react-toastify';
 
 function Download({ id, onDelete }: DownloadProps) {
-  class BtnState {
-    public variant: string;
-
-    public text: string;
-
-    public isDisabled: boolean;
-
-    constructor(variant: string, text: string, isDisabled: boolean) {
-      this.variant = variant;
-      this.text = text;
-      this.isDisabled = isDisabled;
-    }
-  }
-
-  class DownloadState {
-    name: string;
-
-    btnState: BtnState;
-
-    constructor(name: string, btnState: BtnState) {
-      this.name = name;
-      this.btnState = btnState;
-    }
-  }
-
   const downloadStateOptions = {
     ready: new DownloadState(
       'ready',
@@ -94,6 +66,20 @@ function Download({ id, onDelete }: DownloadProps) {
       console.log(`Received from download-interrupted: ${args}`);
     });
   });
+
+  // Функция для alert с ошибкой
+  const notify = (text: string) => {
+    toast.error(text, {
+      position: 'top-right',
+      autoClose: 5000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: 'light',
+    });
+  };
 
   return (
     <Box sx={{ mb: 3 }}>
