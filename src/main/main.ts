@@ -121,9 +121,7 @@ ipcMain.on('download', async (event, downloadUrl) => {
           if (localItem.getState() === 'interrupted' && localItem.canResume()) {
             console.log(`Sending to download-interrupted`);
             mainWindow!.webContents.send('download-interrupted', progress);
-            setTimeout(() => {
-              localItem.resume();
-            }, 5000);
+            setTimeout(() => localItem.resume(), 5000);
           } else if (progress.transferredBytes !== prevBytes) {
             console.log(`Sending to download-progress`);
             mainWindow!.webContents.send('download-progress', progress);
@@ -151,7 +149,7 @@ ipcMain.on('download', async (event, downloadUrl) => {
       });
     }
   } else {
-    /* TODO:error handling */
+    mainWindow!.webContents.send('no-url-specified');
   }
 });
 

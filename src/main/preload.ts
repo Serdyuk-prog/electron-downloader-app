@@ -5,7 +5,8 @@ export type Channels =
   | 'download-progress'
   | 'download-complete'
   | 'download-started'
-  | 'download-interrupted';
+  | 'download-interrupted'
+  | 'no-url-specified';
 
 contextBridge.exposeInMainWorld('electron', {
   ipcRenderer: {
