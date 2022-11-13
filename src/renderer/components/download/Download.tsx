@@ -22,6 +22,10 @@ function Download({ id, onDelete }: DownloadProps) {
       'stopped',
       new BtnState('outlined', 'Продолжить', false)
     ),
+    forced_stop: new DownloadState(
+      'forced_stop',
+      new BtnState('contained', 'Остановлено', true)
+    ),
     done: new DownloadState('done', new BtnState('contained', 'Готово', true)),
   };
 
@@ -47,9 +51,26 @@ function Download({ id, onDelete }: DownloadProps) {
     }
   };
 
+  // Функция для alert с ошибкой
+  const notify = (text: string, toastId?: number | string) => {
+    toast.error(text, {
+      position: 'top-right',
+      autoClose: 5000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: 'light',
+      toastId,
+    });
+  };
+
   useEffect(() => {
     window.electron.ipcRenderer.on('download-progress', (args) => {
       const progress: Progress = args as Progress;
+      if (downloadState.name === downloadStateOptions.forced_stop.name)
+        setDownloadState(downloadStateOptions.inProgress);
       setProgPercent(progress.percent * 100);
     });
 
@@ -61,21 +82,23 @@ function Download({ id, onDelete }: DownloadProps) {
       console.log(`Received from download-started: ${args}`);
       setDownloadState(downloadStateOptions.inProgress);
     });
-  });
 
-  // Функция для alert с ошибкой
-  const notify = (text: string) => {
-    toast.error(text, {
-      position: 'top-right',
-      autoClose: 5000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: 'light',
+    window.electron.ipcRenderer.once('download-interrupted', (args) => {
+      console.log(`Received from download-interrupted: ${args}`);
+      if (
+        downloadState.name === downloadStateOptions.inProgress.name ||
+        downloadState.name === downloadStateOptions.stopped.name
+      )
+        notify('Загрузка вынужденно приостановлена', 'forced_stopped');
+      setDownloadState(downloadStateOptions.forced_stop);
     });
-  };
+
+    window.electron.ipcRenderer.once('no-url-specified', () => {
+      console.log(`Received no-url-specified`);
+      notify('Неправильный url', 'no-url-specified');
+      setDownloadState(downloadStateOptions.ready);
+    });
+  });
 
   return (
     <Box sx={{ mb: 3 }}>
