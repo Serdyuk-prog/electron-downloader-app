@@ -6,6 +6,7 @@ import { Progress } from 'electron-dl';
 import BtnState from 'renderer/ts/classes/btn.state';
 import DownloadState from 'renderer/ts/classes/download.state';
 import { DownloadProps } from 'renderer/ts/types/download.props';
+import { toast } from 'react-toastify';
 
 function Download({ id, onDelete }: DownloadProps) {
   const downloadStateOptions = {
@@ -61,6 +62,20 @@ function Download({ id, onDelete }: DownloadProps) {
       setDownloadState(downloadStateOptions.inProgress);
     });
   });
+
+  // Функция для alert с ошибкой
+  const notify = (text: string) => {
+    toast.error(text, {
+      position: 'top-right',
+      autoClose: 5000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: 'light',
+    });
+  };
 
   return (
     <Box sx={{ mb: 3 }}>
