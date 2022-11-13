@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import './App.css';
 import HomePage from './pages/Home';
 import Layout from './components/layout/Layout';
 
-function App() {
+const App: React.FC = (): JSX.Element => {
   return (
     <Layout>
       <>
@@ -15,6 +14,6 @@ function App() {
       </>
     </Layout>
   );
-}
+};
 
 export default App;
