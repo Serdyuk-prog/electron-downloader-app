@@ -105,12 +105,9 @@ function Download({ id, onDelete }: DownloadProps) {
       }
     );
 
-    window.electron.ipcRenderer.once(
-      `download-started-${downloadUuid}`,
-      () => {
-        setDownloadState(downloadStateOptions.inProgress);
-      }
-    );
+    window.electron.ipcRenderer.once(`download-started-${downloadUuid}`, () => {
+      setDownloadState(downloadStateOptions.inProgress);
+    });
 
     window.electron.ipcRenderer.once(
       `download-interrupted-${downloadUuid}`,
