@@ -117,20 +117,20 @@ ipcMain.on('download', async (event, args) => {
       await download(BrowserWindow.getFocusedWindow(), downloadUrl, {
         onProgress: (progress: Progress) => {
           if (localItem.getState() === 'interrupted' && localItem.canResume()) {
-            mainWindow!.webContents.send('download-interrupted', progress, downloadUuid);
+            mainWindow!.webContents.send(`download-interrupted-${downloadUuid}`, progress);
             setTimeout(() => localItem.resume(), 5000);
           } else if (progress.transferredBytes !== prevBytes) {
-            mainWindow!.webContents.send('download-progress', progress, downloadUuid);
+            mainWindow!.webContents.send(`download-progress-${downloadUuid}`, progress);
           }
           prevBytes = progress.transferredBytes;
         },
         onCompleted: (item: File) => {
-          mainWindow!.webContents.send('download-complete', item, downloadUuid);
+          mainWindow!.webContents.send(`download-complete-${downloadUuid}`, item);
         },
         onStarted: (item: File) => {
           localItem = item;
           downloadItems.set(downloadUuid, item);
-          mainWindow!.webContents.send('download-started', item, downloadUuid);
+          mainWindow!.webContents.send(`download-started-${downloadUuid}`, item);
         },
         showProgressBar: true,
       });

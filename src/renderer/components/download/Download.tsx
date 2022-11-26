@@ -84,22 +84,22 @@ function Download({ id, onDelete }: DownloadProps) {
   };
 
   useEffect(() => {
-    window.electron.ipcRenderer.on('download-progress', (args) => {
+    window.electron.ipcRenderer.on(`download-progress-${downloadUuid}`, (args) => {
       const progress: Progress = args as Progress;
       if (downloadState.name === downloadStateOptions.forced_stop.name)
         setDownloadState(downloadStateOptions.inProgress);
       setProgPercent(progress.percent * 100);
     });
 
-    window.electron.ipcRenderer.once('download-complete', (event, args) => {
+    window.electron.ipcRenderer.once(`download-complete-${downloadUuid}`, (event, args) => {
       setDownloadState(downloadStateOptions.done);
     });
 
-    window.electron.ipcRenderer.once('download-started', (event, args) => {
+    window.electron.ipcRenderer.once(`download-started-${downloadUuid}`, (event, args) => {
       setDownloadState(downloadStateOptions.inProgress);
     });
 
-    window.electron.ipcRenderer.once('download-interrupted', (args) => {
+    window.electron.ipcRenderer.once(`download-interrupted-${downloadUuid}`, (args) => {
       if (downloadState.name === downloadStateOptions.inProgress.name ||
         downloadState.name === downloadStateOptions.stopped.name)
       {
@@ -114,7 +114,7 @@ function Download({ id, onDelete }: DownloadProps) {
       notify('Неправильный url', 'no-url-specified');
       setDownloadState(downloadStateOptions.ready);
     });
-  });
+  }, [downloadUuid]);
 
   return (
     <Box sx={{ mb: 3 }}>
