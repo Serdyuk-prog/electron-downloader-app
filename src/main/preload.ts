@@ -6,7 +6,11 @@ export type Channels =
   | 'download-complete'
   | 'download-started'
   | 'download-interrupted'
-  | 'no-url-specified';
+  | 'no-url-specified'
+  | 'download-pause'
+  | 'download-unpause'
+  | 'download-cancel'
+  | '';
 
 contextBridge.exposeInMainWorld('electron', {
   ipcRenderer: {
