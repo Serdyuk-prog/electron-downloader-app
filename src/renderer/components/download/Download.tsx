@@ -34,21 +34,43 @@ function Download({ id, onDelete }: DownloadProps) {
   );
   const [progPercent, setProgPercent] = useState(0);
   const [url, setUrl] = useState('');
+  const [downloadUuid, setDownloadUuid] = useState('');
 
   const onDownload = () => {
-    console.log(`Url: ${url}`);
-    window.electron.ipcRenderer.sendMessage('download', [url]);
+    const uuid = crypto.randomUUID();
+    setDownloadUuid(uuid);
+
+    window.electron.ipcRenderer.sendMessage('download', [url, uuid]);
   };
 
   const clickDownloadHandler = () => {
+    switch (downloadState.name) {
+      case downloadStateOptions.ready.name:
+        setDownloadState(downloadStateOptions.inProgress);
+        onDownload();
+        break;
+      case downloadStateOptions.inProgress.name:
+        window.electron.ipcRenderer.sendMessage('download-pause', [
+          downloadUuid,
+        ]);
+        setDownloadState(downloadStateOptions.stopped);
+        break;
+      case downloadStateOptions.stopped.name:
+        window.electron.ipcRenderer.sendMessage('download-unpause', [
+          downloadUuid,
+        ]);
+        setDownloadState(downloadStateOptions.inProgress);
+        break;
+      default:
+    }
+  };
+
+  const clickDeleteHandler = () => {
     if (downloadState.name === downloadStateOptions.ready.name) {
-      setDownloadState(downloadStateOptions.inProgress);
-      onDownload();
       return;
     }
-    if (downloadState.name === downloadStateOptions.inProgress.name) {
-      setDownloadState(downloadStateOptions.stopped);
-    }
+
+    window.electron.ipcRenderer.sendMessage('download-cancel', [downloadUuid]);
   };
 
   // Функция для alert с ошибкой
@@ -67,38 +89,55 @@ function Download({ id, onDelete }: DownloadProps) {
   };
 
   useEffect(() => {
-    window.electron.ipcRenderer.on('download-progress', (args) => {
-      const progress: Progress = args as Progress;
-      if (downloadState.name === downloadStateOptions.forced_stop.name)
-        setDownloadState(downloadStateOptions.inProgress);
-      setProgPercent(progress.percent * 100);
-    });
+    window.electron.ipcRenderer.on(
+      `download-progress-${downloadUuid}`,
+      (args) => {
+        const progress: Progress = args as Progress;
+        if (downloadState.name === downloadStateOptions.forced_stop.name)
+          setDownloadState(downloadStateOptions.inProgress);
+        setProgPercent(progress.percent * 100);
+      }
+    );
 
-    window.electron.ipcRenderer.once('download-complete', (event, args) => {
-      setDownloadState(downloadStateOptions.done);
-    });
+    window.electron.ipcRenderer.once(
+      `download-complete-${downloadUuid}`,
+      () => {
+        setDownloadState(downloadStateOptions.done);
+      }
+    );
 
-    window.electron.ipcRenderer.once('download-started', (event, args) => {
-      console.log(`Received from download-started: ${args}`);
+    window.electron.ipcRenderer.once(`download-started-${downloadUuid}`, () => {
       setDownloadState(downloadStateOptions.inProgress);
     });
 
-    window.electron.ipcRenderer.once('download-interrupted', (args) => {
-      console.log(`Received from download-interrupted: ${args}`);
-      if (
-        downloadState.name === downloadStateOptions.inProgress.name ||
-        downloadState.name === downloadStateOptions.stopped.name
-      )
-        notify('Загрузка вынужденно приостановлена', 'forced_stopped');
-      setDownloadState(downloadStateOptions.forced_stop);
-    });
+    window.electron.ipcRenderer.once(
+      `download-interrupted-${downloadUuid}`,
+      () => {
+        if (
+          downloadState.name === downloadStateOptions.inProgress.name ||
+          downloadState.name === downloadStateOptions.stopped.name
+        ) {
+          notify('Загрузка вынужденно приостановлена', 'forced_stopped');
+        }
+
+        setDownloadState(downloadStateOptions.forced_stop);
+      }
+    );
 
     window.electron.ipcRenderer.once('no-url-specified', () => {
       console.log(`Received no-url-specified`);
       notify('Неправильный url', 'no-url-specified');
       setDownloadState(downloadStateOptions.ready);
     });
-  });
+  }, [
+    downloadUuid,
+    downloadState.name,
+    downloadStateOptions.done,
+    downloadStateOptions.forced_stop,
+    downloadStateOptions.inProgress,
+    downloadStateOptions.ready,
+    downloadStateOptions.stopped.name,
+  ]);
 
   return (
     <Box sx={{ mb: 3 }}>
@@ -141,6 +180,7 @@ function Download({ id, onDelete }: DownloadProps) {
         >
           <IconButton
             onClick={() => {
+              clickDeleteHandler();
               onDelete(id);
             }}
           >

@@ -2,11 +2,15 @@ import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 
 export type Channels =
   | 'download'
-  | 'download-progress'
-  | 'download-complete'
-  | 'download-started'
-  | 'download-interrupted'
-  | 'no-url-specified';
+  | `download-progress-${string}`
+  | `download-complete-${string}`
+  | `download-started-${string}`
+  | `download-interrupted-${string}`
+  | 'no-url-specified'
+  | 'download-pause'
+  | 'download-unpause'
+  | 'download-cancel'
+  | '';
 
 contextBridge.exposeInMainWorld('electron', {
   ipcRenderer: {

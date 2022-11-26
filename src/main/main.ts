@@ -2,9 +2,7 @@
 
 import path from 'path';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
-import { autoUpdater } from 'electron-updater';
-import log from 'electron-log';
-import { Progress } from 'electron-dl';
+import { Progress, File } from 'electron-dl';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 
@@ -13,14 +11,6 @@ const { download } = require('electron-dl');
 const unhandled = require('electron-unhandled');
 
 unhandled();
-
-class AppUpdater {
-  constructor() {
-    log.transports.file.level = 'info';
-    autoUpdater.logger = log;
-    autoUpdater.checkForUpdatesAndNotify();
-  }
-}
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -99,45 +89,52 @@ const createWindow = async () => {
     shell.openExternal(edata.url);
     return { action: 'deny' };
   });
-
-  // Remove this if your app does not use auto updates
-  // eslint-disable-next-line
-  new AppUpdater();
 };
+
+const downloadItems = new Map<string, any>();
 
 /**
  * Download listener.
  */
-
-ipcMain.on('download', async (event, downloadUrl) => {
-  console.log(`Received args in ipcMain: ${downloadUrl[0]}`);
+ipcMain.on('download', async (event, args) => {
   let localItem: any;
   let prevBytes = 0;
-  if (downloadUrl[0]) {
+  const downloadUrl = args[0];
+  const downloadUuid = args[1];
+  console.info(
+    `Started download from url ${downloadUrl} with uuid ${downloadUuid}`
+  );
+  if (downloadUrl) {
     try {
-      await download(BrowserWindow.getFocusedWindow(), downloadUrl[0], {
+      await download(BrowserWindow.getFocusedWindow(), downloadUrl, {
         onProgress: (progress: Progress) => {
-          console.log(progress);
           if (localItem.getState() === 'interrupted' && localItem.canResume()) {
-            console.log(`Sending to download-interrupted`);
-            mainWindow!.webContents.send('download-interrupted', progress);
+            mainWindow!.webContents.send(
+              `download-interrupted-${downloadUuid}`,
+              progress
+            );
             setTimeout(() => localItem.resume(), 5000);
           } else if (progress.transferredBytes !== prevBytes) {
-            console.log(`Sending to download-progress`);
-            mainWindow!.webContents.send('download-progress', progress);
+            mainWindow!.webContents.send(
+              `download-progress-${downloadUuid}`,
+              progress
+            );
           }
           prevBytes = progress.transferredBytes;
         },
         onCompleted: (item: File) => {
-          console.log(`Sending to download-complete`);
-          console.log(item);
-          mainWindow!.webContents.send('download-complete', item);
+          mainWindow!.webContents.send(
+            `download-complete-${downloadUuid}`,
+            item
+          );
         },
         onStarted: (item: File) => {
-          console.log(`Sending to download-started`);
-          console.log(item);
           localItem = item;
-          mainWindow!.webContents.send('download-started', item);
+          downloadItems.set(downloadUuid, item);
+          mainWindow!.webContents.send(
+            `download-started-${downloadUuid}`,
+            item
+          );
         },
         showProgressBar: true,
       });
@@ -153,15 +150,41 @@ ipcMain.on('download', async (event, downloadUrl) => {
   }
 });
 
-ipcMain.on('ipc-example', async (event, arg) => {
-  const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
-  console.log(msgTemplate(arg));
-  event.reply('ipc-example', msgTemplate('pong'));
+/**
+ * Pause listener.
+ */
+ipcMain.on('download-pause', async (event, args) => {
+  const downloadUuid = args[0];
+  if (downloadUuid) {
+    console.info(`Pausing item with uuid ${downloadUuid}`);
+    const itemToPause = downloadItems.get(downloadUuid);
+    itemToPause.pause();
+  }
 });
 
 /**
- * Add event listeners...
+ * Unpause listener;
  */
+ipcMain.on('download-unpause', async (event, args) => {
+  const downloadUuid = args[0];
+  if (downloadUuid) {
+    console.info(`Resuming download item with uuid ${downloadUuid}`);
+    const itemToPause = downloadItems.get(downloadUuid);
+    itemToPause.resume();
+  }
+});
+
+/**
+ * Cancellation listener;
+ */
+ipcMain.on('download-cancel', async (event, args) => {
+  const downloadUuid = args[0];
+  if (downloadUuid) {
+    console.info(`Cancelling download item with uuid ${downloadUuid}`);
+    const itemToPause = downloadItems.get(downloadUuid);
+    itemToPause.cancel();
+  }
+});
 
 app.on('window-all-closed', () => {
   // Respect the OSX convention of having the application in memory even
