@@ -61,6 +61,8 @@ function Download({ id, onDelete }: DownloadProps) {
         ]);
         setDownloadState(downloadStateOptions.inProgress);
         break;
+      default:
+        return;
     }
   };
 
@@ -128,7 +130,13 @@ function Download({ id, onDelete }: DownloadProps) {
       notify('Неправильный url', 'no-url-specified');
       setDownloadState(downloadStateOptions.ready);
     });
-  }, [downloadUuid]);
+  }, [downloadUuid,
+    downloadState.name,
+    downloadStateOptions.done,
+    downloadStateOptions.forced_stop,
+    downloadStateOptions.inProgress,
+    downloadStateOptions.ready,
+    downloadStateOptions.stopped.name]);
 
   return (
     <Box sx={{ mb: 3 }}>
