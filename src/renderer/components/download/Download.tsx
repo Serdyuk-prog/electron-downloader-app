@@ -50,11 +50,15 @@ function Download({ id, onDelete }: DownloadProps) {
         onDownload();
         break;
       case downloadStateOptions.inProgress.name:
-        window.electron.ipcRenderer.sendMessage('download-pause', [downloadUuid]);
+        window.electron.ipcRenderer.sendMessage('download-pause', [
+          downloadUuid,
+        ]);
         setDownloadState(downloadStateOptions.stopped);
         break;
       case downloadStateOptions.stopped.name:
-        window.electron.ipcRenderer.sendMessage('download-unpause', [downloadUuid]);
+        window.electron.ipcRenderer.sendMessage('download-unpause', [
+          downloadUuid,
+        ]);
         setDownloadState(downloadStateOptions.inProgress);
         break;
     }
@@ -84,30 +88,43 @@ function Download({ id, onDelete }: DownloadProps) {
   };
 
   useEffect(() => {
-    window.electron.ipcRenderer.on(`download-progress-${downloadUuid}`, (args) => {
-      const progress: Progress = args as Progress;
-      if (downloadState.name === downloadStateOptions.forced_stop.name)
-        setDownloadState(downloadStateOptions.inProgress);
-      setProgPercent(progress.percent * 100);
-    });
-
-    window.electron.ipcRenderer.once(`download-complete-${downloadUuid}`, (event, args) => {
-      setDownloadState(downloadStateOptions.done);
-    });
-
-    window.electron.ipcRenderer.once(`download-started-${downloadUuid}`, (event, args) => {
-      setDownloadState(downloadStateOptions.inProgress);
-    });
-
-    window.electron.ipcRenderer.once(`download-interrupted-${downloadUuid}`, (args) => {
-      if (downloadState.name === downloadStateOptions.inProgress.name ||
-        downloadState.name === downloadStateOptions.stopped.name)
-      {
-        notify('Загрузка вынужденно приостановлена', 'forced_stopped');
+    window.electron.ipcRenderer.on(
+      `download-progress-${downloadUuid}`,
+      (args) => {
+        const progress: Progress = args as Progress;
+        if (downloadState.name === downloadStateOptions.forced_stop.name)
+          setDownloadState(downloadStateOptions.inProgress);
+        setProgPercent(progress.percent * 100);
       }
+    );
 
-      setDownloadState(downloadStateOptions.forced_stop);
-    });
+    window.electron.ipcRenderer.once(
+      `download-complete-${downloadUuid}`,
+      () => {
+        setDownloadState(downloadStateOptions.done);
+      }
+    );
+
+    window.electron.ipcRenderer.once(
+      `download-started-${downloadUuid}`,
+      () => {
+        setDownloadState(downloadStateOptions.inProgress);
+      }
+    );
+
+    window.electron.ipcRenderer.once(
+      `download-interrupted-${downloadUuid}`,
+      () => {
+        if (
+          downloadState.name === downloadStateOptions.inProgress.name ||
+          downloadState.name === downloadStateOptions.stopped.name
+        ) {
+          notify('Загрузка вынужденно приостановлена', 'forced_stopped');
+        }
+
+        setDownloadState(downloadStateOptions.forced_stop);
+      }
+    );
 
     window.electron.ipcRenderer.once('no-url-specified', () => {
       console.log(`Received no-url-specified`);

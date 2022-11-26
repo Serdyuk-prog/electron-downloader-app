@@ -2,8 +2,6 @@
 
 import path from 'path';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
-import { autoUpdater } from 'electron-updater';
-import log from 'electron-log';
 import { Progress, File } from 'electron-dl';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
@@ -13,14 +11,6 @@ const { download } = require('electron-dl');
 const unhandled = require('electron-unhandled');
 
 unhandled();
-
-class AppUpdater {
-  constructor() {
-    log.transports.file.level = 'info';
-    autoUpdater.logger = log;
-    autoUpdater.checkForUpdatesAndNotify();
-  }
-}
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -111,26 +101,40 @@ ipcMain.on('download', async (event, args) => {
   let prevBytes = 0;
   const downloadUrl = args[0];
   const downloadUuid = args[1];
-  console.info(`Started download from url ${downloadUrl} with uuid ${downloadUuid}`);
+  console.info(
+    `Started download from url ${downloadUrl} with uuid ${downloadUuid}`
+  );
   if (downloadUrl) {
     try {
       await download(BrowserWindow.getFocusedWindow(), downloadUrl, {
         onProgress: (progress: Progress) => {
           if (localItem.getState() === 'interrupted' && localItem.canResume()) {
-            mainWindow!.webContents.send(`download-interrupted-${downloadUuid}`, progress);
+            mainWindow!.webContents.send(
+              `download-interrupted-${downloadUuid}`,
+              progress
+            );
             setTimeout(() => localItem.resume(), 5000);
           } else if (progress.transferredBytes !== prevBytes) {
-            mainWindow!.webContents.send(`download-progress-${downloadUuid}`, progress);
+            mainWindow!.webContents.send(
+              `download-progress-${downloadUuid}`,
+              progress
+            );
           }
           prevBytes = progress.transferredBytes;
         },
         onCompleted: (item: File) => {
-          mainWindow!.webContents.send(`download-complete-${downloadUuid}`, item);
+          mainWindow!.webContents.send(
+            `download-complete-${downloadUuid}`,
+            item
+          );
         },
         onStarted: (item: File) => {
           localItem = item;
           downloadItems.set(downloadUuid, item);
-          mainWindow!.webContents.send(`download-started-${downloadUuid}`, item);
+          mainWindow!.webContents.send(
+            `download-started-${downloadUuid}`,
+            item
+          );
         },
         showProgressBar: true,
       });
