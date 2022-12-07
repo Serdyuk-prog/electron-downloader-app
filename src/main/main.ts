@@ -1,4 +1,4 @@
-/* eslint global-require: off, no-console: off, promise/always-return: off */
+/* eslint import/prefer-default-export, global-require: off, no-console: off, promise/always-return: off */
 
 import path from 'path';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
