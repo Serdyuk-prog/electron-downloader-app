@@ -147,7 +147,7 @@ function Download({ id, onDelete }: DownloadProps) {
       notify('Неправильный url', 'no-url-specified');
       setDownloadState(downloadStateOptions.ready);
     });
-  }, [downloadUuid]);
+  }, [downloadUuid, downloadState.name]);
 
   return (
     <Box sx={{ mb: 3 }}>
