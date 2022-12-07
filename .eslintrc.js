@@ -8,6 +8,7 @@ module.exports = {
     'react/react-in-jsx-scope': 'off',
     'react/no-this-in-sfc': 'off',
     'no-console': 'off',
+    'import/prefer-default-export': 'off',
     '@typescript-eslint/no-unused-vars': 'off',
   },
   parserOptions: {
