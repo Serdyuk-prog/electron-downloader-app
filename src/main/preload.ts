@@ -1,5 +1,8 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 
+/**
+ * Каналы ipc.
+ */
 export type Channels =
   | 'download'
   | `download-progress-${string}`
@@ -12,6 +15,9 @@ export type Channels =
   | 'download-cancel'
   | '';
 
+/**
+ * Настройка методов ipc.
+ */
 contextBridge.exposeInMainWorld('electron', {
   ipcRenderer: {
     sendMessage(channel: Channels, args: unknown[]) {

@@ -8,41 +8,54 @@ import DownloadState from 'renderer/ts/classes/download.state';
 import { DownloadProps } from 'renderer/ts/types/download.props';
 import { toast } from 'react-toastify';
 
-function Download({ id, onDelete }: DownloadProps) {
-  const downloadStateOptions = {
-    ready: new DownloadState(
-      'ready',
-      new BtnState('contained', 'Скачать', false)
-    ),
-    inProgress: new DownloadState(
-      'inProgress',
-      new BtnState('outlined', 'Пауза', false)
-    ),
-    stopped: new DownloadState(
-      'stopped',
-      new BtnState('outlined', 'Продолжить', false)
-    ),
-    forced_stop: new DownloadState(
-      'forced_stop',
-      new BtnState('contained', 'Остановлено', true)
-    ),
-    done: new DownloadState('done', new BtnState('contained', 'Готово', true)),
-  };
+/**
+ * Состояния скачивания.
+ */
+const downloadStateOptions = {
+  ready: new DownloadState(
+    'ready',
+    new BtnState('contained', 'Скачать', false)
+  ),
+  inProgress: new DownloadState(
+    'inProgress',
+    new BtnState('outlined', 'Пауза', false)
+  ),
+  stopped: new DownloadState(
+    'stopped',
+    new BtnState('outlined', 'Продолжить', false)
+  ),
+  forced_stop: new DownloadState(
+    'forced_stop',
+    new BtnState('contained', 'Остановлено', true)
+  ),
+  done: new DownloadState('done', new BtnState('contained', 'Готово', true)),
+};
 
+/**
+ * Компонент, предстовляющий скачиваемый файл.
+ * @param id - Идентификатор.
+ * @param onDelete - Callback функция удаления.
+ */
+function Download({ id, onDelete }: DownloadProps) {
   const [downloadState, setDownloadState] = useState(
     downloadStateOptions.ready
   );
-  const [progPercent, setProgPercent] = useState(0);
+  const [progressPercent, setProgressPercent] = useState(0);
   const [url, setUrl] = useState('');
   const [downloadUuid, setDownloadUuid] = useState('');
 
+  /**
+   * Функция скачивания.
+   */
   const onDownload = () => {
     const uuid = crypto.randomUUID();
     setDownloadUuid(uuid);
-
     window.electron.ipcRenderer.sendMessage('download', [url, uuid]);
   };
 
+  /**
+   * Обработчик нажатия кнопки скачивания.
+   */
   const clickDownloadHandler = () => {
     switch (downloadState.name) {
       case downloadStateOptions.ready.name:
@@ -65,6 +78,9 @@ function Download({ id, onDelete }: DownloadProps) {
     }
   };
 
+  /**
+   * Обработчик нажатия кнопки удаления загрузки.
+   */
   const clickDeleteHandler = () => {
     if (downloadState.name === downloadStateOptions.ready.name) {
       return;
@@ -73,7 +89,9 @@ function Download({ id, onDelete }: DownloadProps) {
     window.electron.ipcRenderer.sendMessage('download-cancel', [downloadUuid]);
   };
 
-  // Функция для alert с ошибкой
+  /**
+   * Функция для alert с ошибкой
+   */
   const notify = (text: string, toastId?: number | string) => {
     toast.error(text, {
       position: 'top-right',
@@ -95,7 +113,7 @@ function Download({ id, onDelete }: DownloadProps) {
         const progress: Progress = args as Progress;
         if (downloadState.name === downloadStateOptions.forced_stop.name)
           setDownloadState(downloadStateOptions.inProgress);
-        setProgPercent(progress.percent * 100);
+        setProgressPercent(progress.percent * 100);
       }
     );
 
@@ -129,15 +147,7 @@ function Download({ id, onDelete }: DownloadProps) {
       notify('Неправильный url', 'no-url-specified');
       setDownloadState(downloadStateOptions.ready);
     });
-  }, [
-    downloadUuid,
-    downloadState.name,
-    downloadStateOptions.done,
-    downloadStateOptions.forced_stop,
-    downloadStateOptions.inProgress,
-    downloadStateOptions.ready,
-    downloadStateOptions.stopped.name,
-  ]);
+  }, [downloadUuid, downloadState.name]);
 
   return (
     <Box sx={{ mb: 3 }}>
@@ -169,7 +179,7 @@ function Download({ id, onDelete }: DownloadProps) {
             alignItems: 'center',
           }}
         >
-          <span>{`${progPercent.toFixed(2)}%`}</span>
+          <span>{`${progressPercent.toFixed(2)}%`}</span>
         </Box>
         <Box
           sx={{
