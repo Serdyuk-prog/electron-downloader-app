@@ -26,6 +26,9 @@ if (isDebug) {
   require('electron-debug')();
 }
 
+/**
+ * Установка расширений.
+ */
 const installExtensions = async () => {
   const installer = require('electron-devtools-installer');
   const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
@@ -39,6 +42,9 @@ const installExtensions = async () => {
     .catch(console.log);
 };
 
+/**
+ * Создание основного окна.
+ */
 const createWindow = async () => {
   if (isDebug) {
     await installExtensions();
@@ -84,13 +90,15 @@ const createWindow = async () => {
   const menuBuilder = new MenuBuilder(mainWindow);
   menuBuilder.buildMenu();
 
-  // Open urls in the user's browser
   mainWindow.webContents.setWindowOpenHandler((edata) => {
     shell.openExternal(edata.url);
     return { action: 'deny' };
   });
 };
 
+/**
+ * Скачанные файлы
+ */
 const downloadItems = new Map<string, any>();
 
 /**
@@ -184,11 +192,10 @@ ipcMain.on('download-cancel', async (event, args) => {
     const itemToPause = downloadItems.get(downloadUuid);
     itemToPause.cancel();
   }
+  downloadItems.delete(downloadUuid);
 });
 
 app.on('window-all-closed', () => {
-  // Respect the OSX convention of having the application in memory even
-  // after all windows have been closed
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -199,8 +206,6 @@ app
   .then(() => {
     createWindow();
     app.on('activate', () => {
-      // On macOS it's common to re-create a window in the app when the
-      // dock icon is clicked and there are no other windows open.
       if (mainWindow === null) createWindow();
     });
   })
